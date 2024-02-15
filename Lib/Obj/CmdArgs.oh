@@ -1,0 +1,37 @@
+/* Ofront+ 1.0 -sxpC -48 */
+
+#ifndef CmdArgs__oh
+#define CmdArgs__oh
+
+#include "SYSTEM.oh"
+
+
+#ifndef CHAR8_ARRAY_DEF
+#define CHAR8_ARRAY_DEF
+typedef struct CHAR8_ARRAY {
+  INTEGER len[1];
+  CHAR data[1];
+} CHAR8_ARRAY;
+#endif 
+
+#ifndef INT32_ARRAY_DEF
+#define INT32_ARRAY_DEF
+typedef struct INT32_ARRAY {
+  INTEGER len[1];
+  INTEGER data[1];
+} INT32_ARRAY;
+#endif 
+
+import INTEGER CmdArgs_Count;
+
+
+import INTEGER CmdArgs_EnvCount (void);
+import void CmdArgs_Get (INTEGER n, CHAR *val, INTEGER val__len);
+import void CmdArgs_GetEnv (CHAR *var, INTEGER var__len, CHAR *val, INTEGER val__len);
+import void CmdArgs_GetEnvN (INTEGER n, CHAR *s, INTEGER s__len);
+import void CmdArgs_GetInt (INTEGER n, INTEGER *val);
+import INTEGER CmdArgs_Pos (CHAR *s, INTEGER s__len);
+import void *CmdArgs__init (void);
+
+
+#endif

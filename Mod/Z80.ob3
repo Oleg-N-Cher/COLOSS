@@ -1,0 +1,45 @@
+MODULE Z80;
+IMPORT f := Front, io := Console;
+
+PROCEDURE Gen*;
+BEGIN
+  IF f.Lit() THEN
+    IF f.int = 0 THEN f.Emit(0AFH); (* XOR A *)
+    ELSE f.Emit(03EH); f.Emit(f.int); (* LD A, N *)
+    END;
+  ELSIF f.Cmp("+") THEN
+    IF f.Lit() THEN
+      IF f.int = 0 THEN (* do nothing *)
+      ELSIF f.int = 1 THEN f.Emit(03CH); (* INC A *)
+      ELSE f.Emit(0C6H); f.Emit(f.int); (* ADD A, N *)
+      END;
+    END;
+  END;
+END Gen;
+
+(*
+Context("UINT8");
+
+  IF Lit THEN focus := ThisLiteral
+  ELSIF Cmp("+") THEN SetContext("+")
+  ELSIF Cmp("-") THEN SetContext("-")
+  ...
+  SetContext(curToken)
+  END;
+
+  Context("+")
+  IF Lit THEN
+    IF focus.empty THEN
+
+  IF f.Cmp("+") THEN
+    IF f.Lit() THEN ..
+      IF focus.empty THEN err;
+      ELSIF focus.int THEN INC(focus.int, lit)
+      ...
+      END;
+    ELSIF Var() THEN ..
+  ELSIF f.Cmp("loop") THEN Label
+  ...
+  END;
+*)
+END Z80.

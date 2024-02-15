@@ -1,0 +1,20 @@
+MODULE PDP11;
+IMPORT f := Front, io := Console;
+
+PROCEDURE Gen*;
+BEGIN
+  IF f.Lit() THEN
+    IF f.int = 0 THEN f.EmitW(0A00H); (* CLR R0 *)
+    ELSE f.EmitW(15C0H); f.EmitW(f.int); (* MOV #N, R0 *)
+    END;
+  ELSIF f.Cmp("+") THEN
+    IF f.Lit() THEN
+      IF f.int = 0 THEN (* do nothing *)
+      ELSIF f.int = 1 THEN f.EmitW(0A80H); (* INC R0 *)
+      ELSE f.EmitW(65C0H); f.EmitW(f.int); (* ADD #N, R0 *)
+      END;
+    END;
+  END;
+END Gen;
+
+END PDP11.

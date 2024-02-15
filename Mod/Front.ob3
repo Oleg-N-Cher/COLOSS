@@ -1,0 +1,116 @@
+MODULE Front;
+IMPORT SYSTEM, Platform, io := Console;
+
+VAR
+  ch: CHAR; int-: INTEGER;
+  in, out: Platform.FileHandle;
+
+PROCEDURE Compile* (filename: ARRAY OF CHAR; gen: PROCEDURE);
+BEGIN
+  IF Platform.OldRO(filename, @in) = 0 THEN
+    IF Platform.NewFile(filename + ".bin", @out) # 0 THEN
+      IF Platform.CloseFile(in) = 0 THEN END;
+      io.String(filename); io.String(".bin: can't create"); io.Ln;
+      HALT(2)
+    END;
+    REPEAT gen UNTIL ch = 0X;
+    IF Platform.CloseFile(in) = 0 THEN END;
+  ELSE
+    io.String(filename); io.String(" not found"); io.Ln;
+    HALT(1)
+  END;
+END Compile;
+
+PROCEDURE Get (): CHAR;
+  VAR ch: CHAR; n: INTEGER; error: Platform.ErrorCode;
+BEGIN
+  error := Platform.ReadBuf(in,
+    @SYSTEM.THISARR(SYSTEM.ADR(ch), 1), @n);
+  IF (n # 1) OR (error # 0) THEN ch := 0X END;
+  RETURN ch
+END Get;
+
+PROCEDURE Lit* (): BOOLEAN; (* literal? *)
+  VAR lit: BOOLEAN;
+BEGIN
+  int := 0; lit := FALSE;
+  IF ch = 0X THEN ch := Get() END;
+  WHILE ("0" <= ch) & (ch <= "9") DO
+    lit := TRUE;
+    int := 10*int + ORD(ch) - ORD("0");
+    ch := Get();
+  END;
+  RETURN lit
+END Lit;
+
+PROCEDURE Cmp* (str: ARRAY OF CHAR): BOOLEAN; (* string? *)
+BEGIN
+  (* depends on lowcase *)
+  IF ch = 0X THEN ch := Get() END;
+  WHILE (ch = " ") OR (ch = 9X) OR (ch = 0DX) OR (ch = 0AX) DO
+    ch := Get();
+  END;
+  IF ch = str[0] THEN ch := 0X; RETURN TRUE END;
+  RETURN FALSE
+END Cmp;
+
+PROCEDURE Emit* (i: INTEGER);
+  VAR ch: CHAR;
+BEGIN
+  IF (0H <= i) & (i <= 0FFH) THEN
+    ch := CHR(i);
+    IF Platform.Write(out, SYSTEM.ADR(ch), 1) # 0 THEN
+      io.String("write error"); io.Ln; HALT(2)
+    END;
+  ELSE
+    io.String("out of byte"); io.Ln; HALT(3)
+  END;
+END Emit;
+
+PROCEDURE EmitW* (i: INTEGER);
+  VAR word: INT16;
+BEGIN
+  IF (0H <= i) & (i <= 0FFFFH) THEN
+    Emit(i MOD 100H);
+    Emit(i DIV 100H MOD 100H);
+  ELSE
+    io.String("out of word"); io.Ln; HALT(3)
+  END;
+END EmitW;
+
+BEGIN
+  ch := 0X;
+END Front.
+
+(*
+IMPORT p := ecoParser;
+
+TYPE
+  Focus = RECORD
+    empty: BOOLEAN;
+    int: BOOLEAN; intval: INTEGER;
+    char: BOOLEAN; charval: CHAR;
+  END;
+
+VAR
+  lowcase: BOOLEAN;
+
+PROCEDURE Lit* (): BOOLEAN; (* comparer *)
+BEGIN
+END Lit;
+
+PROCEDURE Emit* (b: INTEGER);
+END Emit;
+
+PROCEDURE EmitWord* (w: INTEGER);
+END EmitWord;
+
+PROCEDURE EmitAdr* (a: INTEGER);
+END EmitAdr;
+
+(* create base context *)
+  Need("MODULE")
+  Need("module")
+  GetCurrentName
+  On("$") => Emit code
+*)

@@ -1,0 +1,25 @@
+MODULE Coloss; (*$MAIN*)
+IMPORT Front, CmdArgs, io := Console, Z80, PDP11;
+
+VAR
+  cpu, filename: ARRAY 260 OF CHAR;
+  gen: PROCEDURE;
+
+BEGIN
+  IF CmdArgs.Count = 2 THEN
+    CmdArgs.Get(1, @cpu);
+    IF cpu = "-z80" THEN gen := Z80.Gen;
+    ELSIF cpu = "-pdp11" THEN gen := PDP11.Gen;
+    ELSE
+      io.String("target CPU type not specified - use -z80 | -pdp11"); io.Ln;
+      HALT(1)
+    END;
+    CmdArgs.Get(2, @filename); Front.Compile(filename, gen);
+  ELSE
+    io.String("COLOSS v0.01"); io.Ln;
+  END;
+END Coloss.
+
+module Hello
+  $#3E
+end Hello.
