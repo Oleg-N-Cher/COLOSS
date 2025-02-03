@@ -1,0 +1,77 @@
+MODULE [noinit] Platform; (** Windows *)
+IMPORT SYSTEM;
+
+CONST
+  MAX_PATH* = 260;
+  NewLine* = 0DX + 0AX;  (* Platform specific new line representation *) 
+
+TYPE
+  BOOL = INT32;
+  DWORD = INT32;
+  ErrorCode* = INT32;
+  FileHandle* = ADRINT; (* 32 or 64 bits *)
+  (* In Windows, the file handle is used to identify a file. When a file is
+     opened by a process using the CreateFile function, a file handle is
+     associated with it until either the process terminates or the handle is
+     closed by using the CloseHandle function. But a HANDLE is not a memory
+     address. Although HANDLE is typedef'd as void *, that's just to make it
+     more opaque because it prohibits arithmetic. *)
+
+PROCEDURE- AAincludeWindowsWrapper- '#include "_windows.h"';
+
+PROCEDURE- err- (): DWORD "(INTEGER)GetLastError()";
+
+(* File system *)
+
+PROCEDURE- InvalidHandleValue- (): FileHandle "(-1)";
+
+PROCEDURE- openro- (n: ARRAY OF CHAR): FileHandle
+"(SYSTEM_ADRINT)CreateFile((char*)n, GENERIC_READ              , FILE_SHARE_READ|FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0)";
+
+PROCEDURE- opennew- (n: ARRAY OF CHAR): FileHandle
+"(SYSTEM_ADRINT)CreateFile((char*)n, GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0)";
+
+(* File APIs *)
+
+PROCEDURE [inline] OldRO* (pathname: ARRAY OF CHAR; VAR h: FileHandle): ErrorCode;
+  VAR fd: FileHandle;
+BEGIN
+  fd := openro(pathname);
+  IF fd = InvalidHandleValue() THEN RETURN err() ELSE h := fd; RETURN 0 END
+END OldRO;
+
+PROCEDURE [inline] NewFile* (pathname: ARRAY OF CHAR; VAR h: FileHandle): ErrorCode;
+  VAR fd: FileHandle;
+BEGIN
+  fd := opennew(pathname);
+  IF fd = InvalidHandleValue() THEN RETURN err() ELSE h := fd; RETURN 0 END
+END NewFile;
+
+PROCEDURE- closeHandle- (h: FileHandle): BOOL "(INTEGER)CloseHandle((HANDLE)h)";
+
+PROCEDURE [inline] CloseFile* (h: FileHandle): ErrorCode;
+BEGIN
+  IF closeHandle(h) = 0 THEN RETURN err() ELSE RETURN 0 END
+END CloseFile;
+
+PROCEDURE- readfile- (fd: FileHandle; p: ADRINT; l: INTEGER; VAR n: INTEGER): BOOL
+  "(INTEGER)ReadFile ((HANDLE)fd, (void*)(p), (DWORD)l, (DWORD*)n, 0)";
+
+PROCEDURE [inline] Read* (h: FileHandle; p: ADRINT; l: INTEGER; VAR n: INTEGER): ErrorCode;
+  VAR result: INTEGER;
+BEGIN
+  n := 0;  (* Clear n because readfile takes a INTEGER but only updates the bottom 32 bits *)
+  result := readfile(h, p, l, @n);
+  IF result = 0 THEN n := 0; RETURN err() ELSE RETURN 0 END
+END Read;
+
+PROCEDURE- writeFile- (fd: FileHandle; p: ADRINT; l: INTEGER; VAR dummy: DWORD): BOOL
+  "(INTEGER)WriteFile((HANDLE)fd, (void*)(p), (DWORD)l, (LPDWORD)dummy, 0)";
+
+PROCEDURE [inline] Write* (h: FileHandle; p: ADRINT; l: INTEGER): ErrorCode;
+  VAR dummy: DWORD;
+BEGIN
+  IF writeFile(h, p, l, @dummy) = 0 THEN RETURN err() ELSE RETURN 0 END
+END Write;
+
+END Platform.

@@ -1,0 +1,30 @@
+MODULE Coloss; (*$MAIN*)
+IMPORT io := Console, CmdLine, Files;
+
+VAR
+  filename: CmdLine.String;
+  in: Files.FileToRead;
+
+BEGIN
+  io.WriteStr("COLOSS v0.01"); io.WriteLn;
+  CASE CmdLine.Count OF
+    | 0: io.WriteStr("Use: coloss modname.col"); io.WriteLn;
+    | 1: CmdLine.Get(1, @filename); io.WriteStr(filename); io.WriteLn;
+         in.OpenToRead(filename);
+           IF in.error THEN
+             io.WriteStr("error: can't open ");
+             io.WriteStr(filename); io.WriteLn;
+           ELSE
+             WHILE ~in.end DO
+               io.WriteCh(CHR(in.ReadByte()));
+               io.WriteCh(".");
+             END;
+
+             IF ~in.error THEN io.WriteStr("NOT error") END;
+             IF in.end THEN io.WriteStr(" END ") END;
+
+           END;
+         in.Close;
+  ELSE
+  END;
+END Coloss.

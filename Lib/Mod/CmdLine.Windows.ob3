@@ -1,0 +1,51 @@
+MODULE CmdLine; (** Command line argument handling for MS Windows *)
+
+  IMPORT SYSTEM, Platform;
+
+  TYPE
+    String* = ARRAY Platform.MAX_PATH OF CHAR;
+    PtrSTR = POINTER [notag] TO ARRAY [notag] OF CHAR;
+
+  VAR
+    Count-, current: INTEGER;
+    cmdline: PtrSTR;
+    dummy: ARRAY 1 OF CHAR;
+
+  PROCEDURE- AAincludeWindowsWrapper '#include "_windows.h"';
+
+  PROCEDURE- getCommandLine (): PtrSTR "(CmdLine_PtrSTR)GetCommandLineA()";
+
+  (* based on Arthur Yefimov's module Args, free.oberon.org *)
+  PROCEDURE Get* (n: INTEGER; VAR val: ARRAY OF CHAR);
+    VAR i, j: INTEGER; param: ARRAY 260 OF CHAR;
+  BEGIN
+    current := -1; i := 0;
+    (* Skip leading whitespaces if any *)
+    WHILE (cmdline[i] # 0X) & (cmdline[i] <= " ") DO INC(@i) END;
+    WHILE cmdline[i] # 0X DO
+      IF cmdline[i] = '"' THEN
+        INC(@i); j := 0;
+        WHILE (cmdline[i] # 0X) & (cmdline[i] # '"') DO
+          IF j < LEN(param) - 1 THEN param[j] := cmdline[i]; INC(@j) END;
+          INC(@i)
+        END;
+        IF cmdline[i] = '"' THEN INC(@i) END
+      ELSE
+        j := 0;
+        WHILE cmdline[i] > " " DO
+          IF j < LEN(param) - 1 THEN param[j] := cmdline[i]; INC(@j) END;
+          INC(@i)
+        END
+      END;
+      param[j] := 0X; INC(@current);
+      IF current = n THEN
+        IF LEN(val) > LEN(param$) THEN val := param$ END;
+        RETURN
+      END;
+      (* Skip whitespaces *)
+      WHILE (cmdline[i] # 0X) & (cmdline[i] <= " ") DO INC(@i) END
+    END
+  END Get;
+
+BEGIN cmdline := getCommandLine(); Get(-1, @dummy); Count := current
+END CmdLine.

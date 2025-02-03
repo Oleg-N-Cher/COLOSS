@@ -1,0 +1,30 @@
+MODULE CmdLine; (* jt, 8.12.94 *)
+
+  (* Command line argument handling for UNIX/Linux *)
+
+  IMPORT SYSTEM, Platform;
+
+  TYPE
+    String* = ARRAY Platform.MAX_PATH OF CHAR;
+    ArgPtr = POINTER [notag] TO ARRAY 2048 OF CHAR;
+    ArgVec = POINTER [notag] TO ARRAY 2048 OF ArgPtr;
+
+  VAR
+    Count-: INTEGER;
+
+  PROCEDURE- includeStdlib      "#include <stdlib.h>";
+  PROCEDURE- ExternArgc         "extern INTEGER SYSTEM_argc;";
+  PROCEDURE- ExternArgv         "extern void *SYSTEM_argv;";
+  PROCEDURE- argc(): INTEGER    "SYSTEM_argc";
+  PROCEDURE- argv(): ArgVec     "(CmdLine_ArgVec)SYSTEM_argv";
+
+  PROCEDURE Get* (n: INTEGER; VAR val: ARRAY OF CHAR);
+    VAR av: ArgVec;
+  BEGIN
+    IF n < argc() THEN av := argv();
+      IF LEN(val) > LEN(av[n]^$) THEN val := av[n]^$ END
+    END
+  END Get;
+
+BEGIN Count := argc() - 1
+END CmdLine.

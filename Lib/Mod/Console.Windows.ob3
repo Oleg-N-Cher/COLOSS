@@ -1,0 +1,33 @@
+MODULE Console;
+IMPORT SYSTEM, w := Platform, Ignore;
+
+VAR
+  hConOutput: w.FileHandle;
+
+PROCEDURE WriteCh* (ch: CHAR);
+VAR
+  maxLen: INT32;
+BEGIN
+  Ignore.Int( w.writeFile(hConOutput, SYSTEM.ADR(ch), 1, @maxLen) );
+END WriteCh;
+
+PROCEDURE WriteStr* (str: ARRAY OF CHAR);
+VAR
+  maxLen: INT32;
+BEGIN
+  Ignore.Int(
+    w.writeFile(hConOutput, SYSTEM.ADR(str), LEN(str$), @maxLen)
+  );
+END WriteStr;
+
+PROCEDURE WriteLn* ;
+BEGIN
+  WriteStr(w.NewLine);
+END WriteLn;
+
+PROCEDURE- getStdHandle (nStdHandle: INT32): w.FileHandle
+  "(SYSTEM_ADRINT)GetStdHandle(nStdHandle)";
+
+BEGIN
+  hConOutput := getStdHandle(-11);
+END Console.

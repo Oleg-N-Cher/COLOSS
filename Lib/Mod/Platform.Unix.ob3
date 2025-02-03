@@ -1,0 +1,77 @@
+MODULE [noinit] Platform; (** UNIX *)
+IMPORT SYSTEM;
+
+(* Based on Vishap Oberon (voc) runtime by David C W Brown, 2016-2018
+*)
+
+CONST
+  MAX_PATH* = 4096; (* PATH_MAX in <limits.h> *)
+  StdOut* = 1;
+  NewLine* = 0AX + 0X;  (* Platform specific new line representation *)
+
+TYPE
+  ErrorCode*  = INTEGER;
+  FileHandle* = INTEGER;  (* In UNIX, a file handle is an opaque number
+    that is used to uniquely identify a file or other file system object.
+    The only operations that can be carried out with the file handle in UNIX
+    are to copy and compare it for equality with another file handle. *)
+
+(* Unix headers to be included *)
+
+PROCEDURE- AAincludeUnistd- "#include <unistd.h>";
+PROCEDURE- AAincludeFcntl-  "#include <fcntl.h>";
+PROCEDURE- AAincludeErrno-  "#include <errno.h>";
+
+(* Error code tests *)
+
+PROCEDURE- err- (): INTEGER "errno";
+
+(* File system *)
+
+PROCEDURE- InvalidHandleValue* (): FileHandle "(-1)";
+
+(* Note: Consider also using flags O_SYNC and O_DIRECT as we do buffering *)
+PROCEDURE- openro- (n: ARRAY OF CHAR): FileHandle "open((char*)n, O_RDONLY)";
+PROCEDURE- opennew- (n: ARRAY OF CHAR): FileHandle "open((char*)n, O_CREAT | O_TRUNC | O_RDWR, 0664)";
+
+(* File APIs *)
+
+PROCEDURE [inline] OldRO* (pathname: ARRAY OF CHAR; VAR h: FileHandle): ErrorCode;
+  VAR fd: FileHandle;
+BEGIN
+  fd := openro(pathname);
+  IF fd = InvalidHandleValue() THEN RETURN err() ELSE h := fd; RETURN 0 END
+END OldRO;
+
+PROCEDURE [inline] NewFile* (pathname: ARRAY OF CHAR; VAR h: FileHandle): ErrorCode;
+  VAR fd: FileHandle;
+BEGIN
+  fd := opennew(pathname);
+  IF fd = InvalidHandleValue() THEN RETURN err() ELSE h := fd; RETURN 0 END
+END NewFile;
+
+PROCEDURE- closefile- (fd: FileHandle): INTEGER "close(fd)";
+
+PROCEDURE [inline] CloseFile* (handle: FileHandle): ErrorCode;
+BEGIN
+  IF closefile(handle) < 0 THEN RETURN err() ELSE RETURN 0 END
+END CloseFile;
+
+PROCEDURE- readfile- (fd: FileHandle; p: ADRINT; l: INTEGER): INTEGER
+  "read(fd, (void*)(p), l)";
+
+PROCEDURE [inline] Read* (h: FileHandle; p: ADRINT; l: INTEGER; VAR n: INTEGER): ErrorCode;
+BEGIN
+  n := readfile(h, p, l);
+  IF n < 0 THEN n := 0; RETURN err() ELSE RETURN 0 END
+END Read;
+
+PROCEDURE- write- (fd: FileHandle; p: ADRINT; l: INTEGER): INTEGER
+  "write(fd, (void*)(p), l)";
+
+PROCEDURE [inline] Write* (h: FileHandle; p: ADRINT; l: INTEGER): ErrorCode;
+BEGIN
+  IF write(h, p, l) < 0 THEN RETURN err() ELSE RETURN 0 END
+END Write;
+
+END Platform.

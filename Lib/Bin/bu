@@ -1,0 +1,17 @@
+#!/bin/sh
+cd "$(dirname $0)"
+cd ../Obj
+
+export OBERON=.:../Sym:../Mod
+O2C="ofront+ -stx88"
+CC="cc -m64 -fPIC -Os -g0 -I.. -I../Mod -fno-ident -fomit-frame-pointer -finline-small-functions -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -c"
+AR="ar rcs ../libXDev.a"
+
+rm -f ../libXDev.a
+
+$O2C Platform.Unix.ob3 CmdLine.Unix.ob3 Console.Unix.ob3 Ignore.ob3 Files.ob3
+if [ $? != 0 ]; then exit 1; fi
+find . -type f -name "*.sym" -exec mv -f {} ../Sym \;
+$CC ../Mod/SYSTEM.c Platform.c CmdLine.c Console.c Files.c
+if [ $? != 0 ]; then exit 1; fi
+$AR SYSTEM.o Platform.o CmdLine.o Console.o Files.o
